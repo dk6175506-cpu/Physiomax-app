@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PhysioMax - Cloud Sync & PDF</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
+<style>
+:root { --primary-red:#cc2026; --primary-green:#7ab541; --light-bg:#f0f4f0; }
+body { font-family:'Segoe UI',Arial; background:var(--light-bg); margin:0; color:#333; }
+header { background:white; text-align:center; padding:10px; border-bottom:4px solid var(--primary-green); box-shadow:0 2px 10px rgba(0,0,0,0.1); }
+.container { max-width:600px; margin:15px auto; padding:0 10px; }
+.card { background:white; padding:15px; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.08); margin-bottom:15px; border-left:5px solid var(--primary-red); }
+input,select { width:100%; padding:10px; margin:5px 0; border:1px solid #ddd; border-radius:6px; }
+button { width:100%; padding:12px; border:none; border-radius:8px; font-weight:bold; cursor:pointer; }
+.btn-red { background:var(--primary-red); color:white; }
+.btn-green { background:var(--primary-green); color:white; }
+.btn-outline { background:#eee; color:#333; width:auto; padding:6px 15px; font-size:12px; }
+.hidden { display:none; }
+.backup-row { display:flex; gap:10px; margin-top:10px; }
+.history-item { background:white; border:1px solid #ddd; border-left:4px solid var(--primary-green); padding:12px; margin-bottom:10px; border-radius:8px; cursor:pointer; }
+.history-details { margin-top:8px; font-size:13px; line-height:1.5; background:#f9f9f9; padding:8px; border-radius:6px; display:none; }
+.tag { display:inline-block; background:#e8f5e9; padding:2px 6px; border-radius:4px; font-size:11px; margin:2px; }
+.badge { padding:2px 8px; border-radius:10px; font-size:10px; font-weight:bold; background:#eee; }
+.checklist-container { display:grid; grid-template-columns:1fr 1fr; gap:8px; background:#f9f9f9; padding:10px; border-radius:8px; }
+.machine-entry { display:flex; align-items:center; gap:5px; background:white; padding:5px; border-radius:5px; border:1px solid #eee; font-size:11px; }
+.machine-entry input[type="number"] { width:45px; padding:4px; }
+
+#splash { position:fixed; top:0; left:0; width:100%; height:100%; background:white; display:flex; flex-direction:column; justify-content:center; align-items:center; z-index:9999; }
+</style>
+</head>
+
+<body>
+<div id="splash">
+  <div style="font-size:34px;font-weight:900;color:#cc2026;">PHYSIOMAX</div>
+  <div style="font-size:13px;font-weight:600;color:#7ab541;">Advance Physiotherapy Center</div>
+</div>
+
+<header>
+  <div style="font-size:22px;font-weight:900;color:#cc2026;">PHYSIOMAX</div>
+  <div style="font-size:12px;font-weight:600;color:#7ab541;">Advance Physiotherapy Center</div>
+</header>
+
+<div class="container">
+
+<div id="loginSection" class="card hidden">
+  <h3 style="text-align:center;">Admin Login</h3>
+  <input type="password" id="pass" placeholder="Enter Password">
+  <button onclick="login()" class="btn-red">Login</button>
+</div>
+
+<div id="dashboardSection" class="hidden">
+<div class="card">
+  <h3>➕ New Patient</h3>
+  <input id="newName" placeholder="Full Name">
+  <input id="newPhone" placeholder="Phone Number">
+  <input id="newEmail" placeholder="Email Address">
+  <input id="newAdvance" placeholder="Advance Payment" type="number">
+  <button onclick="addPatient()" class="btn-green">Add Patient</button>
+</div>
+
+<div class="card">
+  <h3>📂 Search Records</h3>
+  <input id="searchBox" placeholder="Search name..." onkeyup="renderPatients()">
+  <div id="patientList"></div>
+  <div class="backup-row">
+    <button onclick="exportData()" class="btn-outline">💾 Backup</button>
+    <button onclick="document.getElementById('importFile').click()" class="btn-outline">📂 Restore</button>
+    <input type="file" id="importFile" class="hidden" onchange="importData(event)">
+  </div>
+</div>
+</div>
+
+<div id="visitSection" class="hidden">
+<button onclick="showDashboard()" class="btn-outline">⬅ Back</button>
+
+<div class="card">
+  <h2 id="pName" style="margin:0;color:#cc2026;"></h2>
+  <div id="pBal" style="font-weight:bold;color:#7ab541;"></div>
+  <button onclick="generatePDF()" class="btn-green">📄 Download Patient PDF</button>
+</div>
+
+<div class="card">
+<h3>📝 New Treatment</h3>
+<input type="date" id="vDate">
+<div style="display:flex;gap:5px;">
+  <input type="time" id="vIn">
+  <input type="time" id="vOut">
+</div>
+
+<h4>⚙️ Machines</h4>
+<div class="checklist-container" id="mList"></div>
+
+<h4>🏋️ Exercises</h4>
+<div class="checklist-container" id="eList"></div>
+
+<input type="number" id="vFees" placeholder="Fees ₹">
+
+<select id="vStatus">
+  <option value="Paid">Paid</option>
+  <option value="Pending">Pending</option>
+  <option value="Advance">Advance</option>
+  <option value="Daily">Daily</option>
+</select>
+
+<input id="vStaff" placeholder="Staff Name">
+<button onclick="saveVisit()" class="btn-red">Save Record</button>
+</div>
+
+<h3>📜 Visit History (Tap to View Details)</h3>
+<div id="vHistory"></div>
+</div>
+</div>
+
+<script>
+const MACHINES=["IFT","TENS","Ultrasound","SWD","Traction","Wax Bath","Laser","Muscle Stimulator"];
+const EXERCISES=["Stretching","Strengthening","Active ROM","Passive ROM","Isometric","Core Stability"];
+
+let patients=JSON.parse(localStorage.getItem("pm_patients_v3")||"[]");
+let visits=JSON.parse(localStorage.getItem("pm_visits_v3")||"[]");
+let currentPid=null;
+
+window.onload=()=>{
+  setTimeout(()=>{ splash.style.display="none"; loginSection.classList.remove("hidden"); },2000);
+
+  mList.innerHTML=MACHINES.map(m=>`
+    <div class="machine-entry">
+      <input type="checkbox" class="m-check" value="${m}">
+      ${m}
+      <input type="number" class="m-time" placeholder="Min">
+    </div>`).join('');
+
+  eList.innerHTML=EXERCISES.map(e=>`<label><input type="checkbox" class="e-check" value="${e}"> ${e}</label>`).join('');
+};
+
+function login(){ if(pass.value==="hirva4848"){ loginSection.classList.add("hidden"); dashboardSection.classList.remove("hidden"); renderPatients(); } else alert("Wrong Password"); }
+
+function addPatient(){ patients.push({ id:Date.now(), name:newName.value, phone:newPhone.value, email:newEmail.value, advance:parseFloat(newAdvance.value||0) }); save(); renderPatients(); }
+
+function renderPatients(){ const q=(searchBox.value||"").toLowerCase(); patientList.innerHTML=patients.filter(p=>p.name.toLowerCase().includes(q)).map(p=>`<div class="card" onclick="openPatient(${p.id})"><strong>${p.name}</strong><br><small>Bal ₹${p.advance} | ${p.phone}</small></div>`).join(''); }
+
+function openPatient(id){ currentPid=id; const p=patients.find(x=>x.id===id); pName.innerText=p.name; pBal.innerText="Advance Balance: ₹ "+p.advance; dashboardSection.classList.add("hidden"); visitSection.classList.remove("hidden"); renderHistory(); }
+
+function saveVisit(){ const p=patients.find(x=>x.id===currentPid); const fees=parseFloat(vFees.value||0); const status=vStatus.value;
+
+  const machineData=[...document.querySelectorAll(".m-check")].filter(c=>c.checked).map(c=>{
+    const time=c.parentElement.querySelector('.m-time').value;
+    return time? `${c.value} (${time} min)`: c.value;
+  });
+
+  visits.push({ pid:currentPid, date:vDate.value, in:vIn.value, out:vOut.value, fees, status, staff:vStaff.value, machines:machineData, exercises:[...document.querySelectorAll(".e-check:checked")].map(c=>c.value) });
+
+  if(status==="Advance") p.advance-=fees;
+  save(); renderHistory(); pBal.innerText="Advance Balance: ₹ "+p.advance;
+}
+
+function toggleDetails(id){ const el=document.getElementById(id); el.style.display=el.style.display==='none'?'block':'none'; }
+
+function renderHistory(){ const my=visits.filter(v=>v.pid===currentPid).reverse(); vHistory.innerHTML=my.map((v,i)=>{
+  const detailId='detail_'+i;
+  return `<div class="history-item" onclick="toggleDetails('${detailId}')">
+      <strong>${v.date}</strong> <span class="badge">${v.status}</span><br>
+      ₹${v.fees} | ${v.in}-${v.out} | ${v.staff}
+      <div id="${detailId}" class="history-details">
+        <b>Machines:</b><br>${v.machines.map(m=>`<span class='tag'>${m}</span>`).join(' ')||'—'}<br>
+        <b>Exercises:</b><br>${v.exercises.map(e=>`<span class='tag'>${e}</span>`).join(' ')||'—'}
+      </div>
+    </div>`;
+  }).join(''); }
+
+function save(){ localStorage.setItem("pm_patients_v3",JSON.stringify(patients)); localStorage.setItem("pm_visits_v3",JSON.stringify(visits)); }
+function showDashboard(){ visitSection.classList.add("hidden"); dashboardSection.classList.remove("hidden"); }
+
+function generatePDF(){ const {jsPDF}=window.jspdf; const doc=new jsPDF("p","mm","a4"); const p=patients.find(x=>x.id===currentPid); const myVisits=visits.filter(v=>v.pid===currentPid);
+  doc.rect(5,5,200,287); doc.setFontSize(20); doc.text("PHYSIOMAX REPORT",105,20,{align:"center"}); doc.setFontSize(11); doc.text("Advance Physiotherapy Center",105,27,{align:"center"}); doc.line(10,32,200,32);
+  doc.text(`Patient Name: ${p.name}`,10,42); doc.text(`Phone: ${p.phone}`,10,50); doc.text(`Advance Balance: ₹ ${p.advance}`,10,58);
+  const rows=myVisits.map(v=>[v.date,`${v.in}-${v.out}`,v.machines.join(", "),v.exercises.join(", "),v.fees,v.status]);
+  doc.autoTable({ startY:68, head:[["Date","Time","Machines","Exercises","Fees","Status"]], body:rows, margin:{left:10,right:10}, styles:{fontSize:9,cellPadding:3,overflow:"linebreak"}, headStyles:{fillColor:[122,181,65]} });
+  doc.save(`${p.name}_PhysioMax_Report.pdf`);
+}
+
+function exportData(){ const blob=new Blob([JSON.stringify({patients,visits})],{type:"application/json"}); const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="PhysioMax_Backup.json"; a.click(); }
+function importData(e){ const r=new FileReader(); r.onload=ev=>{ const d=JSON.parse(ev.target.result); patients=d.patients; visits=d.visits; save(); renderPatients(); }; r.readAsText(e.target.files[0]); }
+</script>
+</body>
+</html>
