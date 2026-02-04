@@ -1,0 +1,13 @@
+{
+  "background_color": "#ffffff",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "Physiomax",
+  "orientation": "any",
+  "scope": "/",
+  "short_name": "Physio",
+  "start_url": "/",
+  "theme_color": "#7cb342",
+  "id": "com.physiomax.app",
+  "description": "Physiomax is an advanced physiotherapy and rehabilitation clinic providing expert care for pain relief, injury recovery, post-surgery rehabilitation, and personalized physiotherapy treatment."
+}
