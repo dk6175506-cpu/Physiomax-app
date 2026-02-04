@@ -3,6 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+<!-- ✅ PWA REQUIRED -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#7ab541">
+  
 <title>PhysioMax - Cloud Sync & PDF</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -187,3 +192,4 @@ function importData(e){ const r=new FileReader(); r.onload=ev=>{ const d=JSON.pa
 </script>
 </body>
 </html>
+
